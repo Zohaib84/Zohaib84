@@ -1,68 +1,108 @@
-<!doctype html>
-<html>
-   <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>ADMIN | Login</title>
-        <link rel="stylesheet" href="../css/bootstrap.min.css" />
-        <link rel="stylesheet" href="font/font-awesome-4.7.0/css/font-awesome.css">
-        <link rel="stylesheet" href="../css/style.css">
-    </head>
+<?php include 'header.php'; ?>
+<div id="main-content">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <!-- post-container -->
+                <div class="post-container">
+                    <?php
+                    include 'config.php';
+                    $limit = 3;
+                    if(isset($_GET['page'])){
+                        $page = $_GET['page'];
+                    }
+                    else {
+                        $page = 1;
+                    }
+                    $offset = ($page - 1) * $limit;
 
-    <body>
-        <div id="wrapper-admin" class="body-content">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-offset-4 col-md-4">
-                        <img class="logo" src="images/news.jpg">
-                        <h3 class="heading">Admin</h3>
-                        <!-- Form Start -->
-                        <form  action="<?php echo $_SERVER['PHP_SELF']; ?>" method ="POST">
-                            <div class="form-group">
-                                <label>Username</label>
-                                <input type="text" name="username" class="form-control" placeholder="" required>
+                    // SQL query to fetch posts with pagination
+                    $sql = "SELECT post.post_id, post.title,
+                            post.description, post.post_img,
+                            category.category_name, user.username, post.category, post.post_date
+                            FROM post
+                            LEFT JOIN category ON post.category = category.category_id
+                            LEFT JOIN user ON post.author = user.user_id
+                            ORDER BY post.post_id DESC LIMIT {$offset}, {$limit}";
+
+                    $result = mysqli_query($conn, $sql) or die('Query Failed: ' . mysqli_error($conn));
+
+                    if (mysqli_num_rows($result) > 0) {
+                        $serial = $offset + 1; // Counter for serial number
+                        while ($row = mysqli_fetch_assoc($result)) {
+                    ?>
+                    <div class="post-content">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <a class="post-img" href="single.php?id=<?php echo $row['post_id']; ?>"><img src="admin/upload/<?php echo $row['post_img']; ?>" alt=""/></a>
                             </div>
-                            <div class="form-group">
-                                <label>Password</label>
-                                <input type="password" name="password" class="form-control" placeholder="" required>
+                            <div class="col-md-8">
+                                <div class="inner-content clearfix">
+                                    <h3><a href='single.php?id=<?php echo $row['post_id']; ?>'><?php echo $row['title']; ?></a></h3>
+                                    <div class="post-information">
+                                        <span>
+                                            <i class="fa fa-tags" aria-hidden="true"></i>
+                                            <a href='category.php'><?php echo $row['category_name']; ?></a>
+                                        </span>
+                                        <span>
+                                            <i class="fa fa-user" aria-hidden="true"></i>
+                                            <a href='author.php'><?php echo $row['username']; ?></a>
+                                        </span>
+                                        <span>
+                                            <i class="fa fa-calendar" aria-hidden="true"></i>
+                                            <?php echo date('d M, Y', strtotime($row['post_date'])); ?>
+                                        </span>
+                                    </div>
+                                    <p class="description">
+                                        <?php echo substr($row['description'], 0, 125) . "..."; ?> 
+
+                                    </p>
+                                    <a class='read-more pull-right' href='single.php?id=<?php echo $row['post_id']; ?>'>read more</a>
+                                </div>
                             </div>
-                            <input type="submit" name="login" class="btn btn-primary" value="login" />
-                        </form>
-                        <!-- /Form  End -->
-
-                        <?php
-      if(isset($_POST['login'])) {
-          // If the login form is submitted
-          include 'config.php'; // Include the database connection configuration
-          $username = mysqli_real_escape_string($conn, $_POST['username']); // Escape the username to prevent SQL injection
-          $password = md5($_POST['password']); // Hash the password using MD5 (not recommended for secure applications)
-          $sql = "SELECT user_id, username, role FROM your_table_name WHERE username = '{$username}' AND password = '{$password}'";
-          // Formulate the SQL query to check if the provided username and password match a record in the database
-          $result = mysqli_query($conn, $sql) or die("Connection Failed"); // Execute the query
-
-          if(mysqli_num_rows($result) > 0) {
-              // If a record is found with the provided username and password
-              while($row = mysqli_fetch_assoc($result)) {
-                  // Start a session
-                  session_start();
-                  // Store relevant user information in session variables
-                  $_SESSION["username"] = $row["username"];
-                  $_SESSION["user_id"] = $row["user_id"];
-                  $_SESSION["user_role"] = $row["role"];
-                  // Redirect the user to a dashboard or home page
-                  header("location: {$hostname}/admin/users.php");
-              }
-          } else {
-              // If no record is found with the provided username and password
-              echo '<div class="alert alert-danger">Username or Password is incorrect</div>';
-          }
-      }
-  ?>
-
+                        </div>
                     </div>
-                </div>
+                    <?php
+                        }
+                    }
+                    else {
+                        echo "<h2>No Record Found</h2>";
+                    }
+                    ?>
+
+                </div><!-- /post-container -->
+
+                <?php
+                // Display pagination links
+                $total_records = 0; // You need to set this to the actual total number of records
+                if ($total_records > $limit) {
+                    $total_pages = ceil($total_records / $limit);
+
+                    echo "<ul class='pagination admin-pagination'>";
+
+                    // Previous page link
+                    if ($page > 1) {
+                        echo "<li><a href='index.php?page=".($page - 1)."'>Prev</a></li>";
+                    }
+
+                    // Page links
+                    for ($i = 1; $i <= $total_pages; $i++) {
+                        $active_class = ($i == $page) ? "active" : "";
+                        echo "<li class='$active_class'><a href='index.php?page=$i'>$i</a></li>";
+                    }
+
+                    // Next page link
+                    if ($page < $total_pages) {
+                        echo "<li><a href='index.php?page=".($page + 1)."'>Next</a></li>";
+                    }
+
+                    echo "</ul>";
+                }
+                ?>
+
             </div>
+            <?php include 'sidebar.php'; ?>
         </div>
-    </body>
-</html>
+    </div>
+</div>
+<?php include 'footer.php'; ?>
