@@ -18,7 +18,7 @@
 
                     // SQL query to fetch posts with pagination
                     $sql = "SELECT post.post_id, post.title,
-                            post.description, post.post_img,
+                            post.description, post.post_img, post.author,
                             category.category_name, user.username, post.category, post.post_date
                             FROM post
                             LEFT JOIN category ON post.category = category.category_id
@@ -42,11 +42,11 @@
                                     <div class="post-information">
                                         <span>
                                             <i class="fa fa-tags" aria-hidden="true"></i>
-                                            <a href='category.php'><?php echo $row['category_name']; ?></a>
+                                            <a href='category.php?cid=<?php echo $row['category']; ?>'><?php echo $row['category_name']; ?></a>
                                         </span>
                                         <span>
                                             <i class="fa fa-user" aria-hidden="true"></i>
-                                            <a href='author.php'><?php echo $row['username']; ?></a>
+                                            <a href='author.php?aid=<?php echo $row['author']; ?>'><?php echo $row['username']; ?></a>
                                         </span>
                                         <span>
                                             <i class="fa fa-calendar" aria-hidden="true"></i>
@@ -54,7 +54,7 @@
                                         </span>
                                     </div>
                                     <p class="description">
-                                        <?php echo substr($row['description'], 0, 125) . "..."; ?> 
+                                        <?php echo substr($row['description'], 0, 125) . "..."; ?>
 
                                     </p>
                                     <a class='read-more pull-right' href='single.php?id=<?php echo $row['post_id']; ?>'>read more</a>
